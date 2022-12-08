@@ -1,48 +1,51 @@
 import pandas as pd
 import numpy as np
+import random
 
+def clean_words_create_grid(size):
+  clues = pd.read_csv('clues.csv')
+  all_words = {}
 
-clues = pd.read_csv('clues.csv')
-all_words = {}
+  # clean data and add to dictionary
+  # for i in range(len(clues)):
 
-# clean data and add to dictionary
-# for i in range(len(clues)):
+  clues = clues.dropna()
+  for index, row in clues.iterrows():
+    # if (not (row['clue']).isna() and not row['answer'].isna()):
+    # if row['clue']
+    all_words[row['answer']] = row['clue']
 
-clues = clues.dropna()
-for index, row in clues.iterrows():
-  # if (not (row['clue']).isna() and not row['answer'].isna()):
-  # if row['clue']
-  all_words[row['answer']] = row['clue']
+  # print(clues_dict)
+    
 
-# print(clues_dict)
-  
+  # # get user input
+  # size = int(input("What size would you like the crossword to be? Please pick a number between 6 and 20: "))
+  # while size > 20 or size < 4:
+  #   size = int(input("This size is out of bounds. What size would you like the crossword to be? Please pick a number between 6 and 20: "))
 
-# get user input
-size = int(input("What size would you like the crossword to be? Please pick a number between 6 and 20: "))
-while size > 20 or size < 4:
-  size = int(input("This size is out of bounds. What size would you like the crossword to be? Please pick a number between 6 and 20: "))
+  # remove words longer than size of puzzle and remove 1 and 2-letter words
+  clues_dict = {}
+  for word in all_words.keys():
+    if len(word) <= size:
+      if(not len(word) <= 2):
+        clues_dict[word] = all_words[word]
 
-# remove words longer than size of puzzle and remove 1 and 2-letter words
-clues_dict = {}
-for word in all_words.keys():
-  if len(word) <= size:
-    if(not len(word) <= 2):
-      clues_dict[word] = all_words[word]
+  # create grid to match inputted size
+  grid = []
+  for i in range(size):
+    g = []
+    for j in range(size):
+      g.append(' ')
+    grid.append(g)
 
-# create grid to match inputted size
-grid = []
-for i in range(size):
-  g = []
-  for j in range(size):
-    g.append(' ')
-  grid.append(g)
+  return grid, clues_dict
 
 def pretty_print(g):
   for row in g:
     print(row)
 
 # return number of intersection the rest of the words have with the current words in the puzzle
-def numIntersections(current_words):
+def ranked_by_num_intersections(current_words, clues_dict):
   ranked_words = []
   for word1 in clues_dict.keys():
     # count = number of intersections between current words in puzzle and all other words
@@ -61,11 +64,11 @@ def numIntersections(current_words):
     
   return ranked_words
 
-# ranking words based off number of intersections with all other words
-ranked_words = numIntersections(clues_dict.keys())
+# # ranking words based off number of intersections with all other words
+# ranked_words = ranked_by_num_intersections(clues_dict.keys())
 
-# sort ranked words (in order of descending number of interesections)
-ranked_words = sorted(ranked_words, key=lambda x: x[0], reverse=True)  
+# # sort ranked words (in order of descending number of interesections)
+# ranked_words = sorted(ranked_words, key=lambda x: x[0], reverse=True)  
 
 # print(ranked_words)
 
@@ -77,7 +80,41 @@ def contains_intersection(w, current):
       if letter in word:
         intersection.add(word)
   return intersection
-  
+
+# check spacing near the word to make sure it is either empty or has matching letters with word on board
+def check_spacing(grid, first, second, word_intersection, y, is_horizontal, word):
+  # invalid intersection (not enough spaces above word) 
+  if first < 0:
+    return False
+  if first >= len(grid):
+    return False
+  if second < 0:
+    return False
+  if second >= len(grid):
+    return False
+
+  if not ((grid[first][second] == ' ') or (grid[first][second] == word[word_intersection + y]) or (grid[first][second] == '-')):
+    return False
+    
+  # make sure we are not checking spaces to the left and right if we are at the intersection
+  if(y != 0):
+    # check spaces to left to make sure they're empty
+    if is_horizontal:
+      if second > 0 and (grid[first][second - 1] != ' ' and grid[first][second - 1] != '-'):
+        return False
+      # check spaces to right to make sure they're empty
+      if second < len(grid) - 1 and (grid[first][second + 1] != ' ' and grid[first][second + 1] != '-') :
+        return False
+    else:
+      if second > 0 and (grid[first - 1][second] != ' ' and grid[first - 1][second] != '-'):
+        return False
+      # check spaces to right to make sure they're empty
+      if (second < len(grid) - 1) and (grid[first + 1][second] != ' ' and grid[first + 1][second] != '-'):
+        return False
+
+  return True
+
+
 # i = index of intersection of word on board
 # j = index of intersection of word we are trying to place
 def is_valid_intersection(is_horizontal, x_pos, y_pos, i, j, grid, word):
@@ -86,41 +123,18 @@ def is_valid_intersection(is_horizontal, x_pos, y_pos, i, j, grid, word):
     x_pos_intersection = x_pos + i
     y_pos_intersection = y_pos
     # check if spot directly above and/or below letter are free
+    
 
     # check spacing above the word
     for y in range(j + 1):
-      # invalid intersection (not enough spaces above word) 
-      if y_pos_intersection - y < 0:
+      if not check_spacing(grid, y_pos_intersection - y, x_pos_intersection, j, 0-y, True, word):
         return False
-      if not ((grid[y_pos_intersection - y][x_pos_intersection] == ' ') or (grid[y_pos_intersection - y][x_pos_intersection] == word[j - y])):
-        return False
-        
-      # make sure we are not checking spaces to the left and right if we are at the intersection
-      if(y != 0):
-        # check spaces to left to make sure they're empty
-        if x_pos_intersection > 0 and grid[y_pos_intersection - y][x_pos_intersection - 1] != ' ':
-          return False
-        # check spaces to right to make sure they're empty
-        if x_pos_intersection < len(grid) - 1 and grid[y_pos_intersection - y][x_pos_intersection + 1] != ' ':
-          return False
     
     # check spacing below the word   
     for y in range(len(word) - j):
-      # invalid intersection (not enough spaces below word)
-      if y_pos_intersection + y >= len(grid):
-        return False
-      if not ((grid[y_pos_intersection + y][x_pos_intersection] == ' ') or (grid[y_pos_intersection + y][x_pos_intersection] == word[j + y])):
+      if not check_spacing(grid, y_pos_intersection + y, x_pos_intersection, j, y, True, word):
         return False
     
-      # make sure we are not checking spaces to the left and right if we are at the intersection
-      if(y != 0):
-        if x_pos_intersection > 0 and grid[y_pos_intersection - y][x_pos_intersection - 1] != ' ':
-          return False
-        # check spaces to right to make sure they're empty
-        if x_pos_intersection < len(grid) - 1 and grid[y_pos_intersection - y][x_pos_intersection + 1] != ' ':
-          return False
-        # check below
-      
       # place horizontally
   else:
     x_pos_intersection = x_pos
@@ -128,42 +142,13 @@ def is_valid_intersection(is_horizontal, x_pos, y_pos, i, j, grid, word):
 
     # check spacing to the left of word 
     for x in range(j+1):
-      
-      # soni
-      # invalid intersection (not enough spaces to the left of word)
-      if x_pos_intersection - x < 0:
+      if not check_spacing(grid, y_pos_intersection, x_pos_intersection - x, j, 0-x, False, word):
         return False
-      if not((grid[y_pos_intersection][x_pos_intersection - x] == ' ') or (grid[y_pos_intersection][x_pos_intersection - x] == word[j - x])):
-        return False
-
-      # make sure we are not checking spaces above and below if we are at the intersection
-      if(x != 0):
-        # check spaces above to make sure they're empty
-        if y_pos_intersection > 0 and grid[y_pos_intersection - 1][x_pos_intersection + x] != ' ':
-          return False
-
-        # check spaces bottom to make sure they're empty
-        if y_pos_intersection < len(grid) - 1 and grid[y_pos_intersection + 1][x_pos_intersection + x] != ' ':
-          return False
   
     # check spacing to the right of word
     for x in range(len(word) - j):
-
-      # invalid intersection (not enough spaces to the right of word)
-      if x_pos_intersection + x >= len(grid):
+      if not check_spacing(grid, y_pos_intersection, x_pos_intersection + x, j, x, False, word):
         return False
-      if not((grid[y_pos_intersection][x_pos_intersection + x] == ' ') or (grid[y_pos_intersection][x_pos_intersection + x] == word[j + x])):
-        return False
-
-      # make sure we are not checking spaces above and below if we are at the intersection
-      if x != 0:
-        # check spaces above to make sure they're empty
-        if y_pos_intersection > 0 and grid[y_pos_intersection - 1][x_pos_intersection + x] != ' ':
-          return False
-
-        # check spaces bottom to make sure they're empty
-        if y_pos_intersection < len(grid) - 1 and grid[y_pos_intersection + 1][x_pos_intersection + x] != ' ':
-          return False
 
   return True
 
@@ -208,14 +193,18 @@ def determine_whitespace_to_remove(grid, x_pos, y_pos, word, is_horizontal):
       # check above and below to remove whitespace
       if y_pos + 1 < len(grid) and grid[y_pos + 1][x_pos + i] == ' ':
         to_remove += 1
-      if y_pos - 1 > 0 and grid[y_pos - 1][x_pos + i] == ' ':
+        grid[y_pos + 1][x_pos + i] = '-'
+      if y_pos - 1 >= 0 and grid[y_pos - 1][x_pos + i] == ' ':
         to_remove += 1
+        grid[y_pos - 1][x_pos + i] = '-'
     else:
       # check left and right to remove whitespace
       if x_pos + 1 < len(grid) and grid[y_pos + i][x_pos + 1] == ' ':
         to_remove += 1
-      if x_pos - 1 > 0 and grid[y_pos + i][x_pos - 1] == ' ':
+        grid[y_pos + i][x_pos + 1] = '-'
+      if x_pos - 1 >= 0 and grid[y_pos + i][x_pos - 1] == ' ':
         to_remove += 1
+        grid[y_pos + i][x_pos - 1] = '-'
 
   return to_remove
 
@@ -280,33 +269,45 @@ def place_on_board(grid, word, placement, positioned_words):
 
   return grid
   
+def place_first_word(size, word, grid):
+  x = size//2 - len(word)//2
+  y = size//2
+  
+  for i in range(len(word)):
+    grid[y][x] = word[i]
+    
+    # check above and below to remove whitespace
+    if y + 1 < len(grid) and grid[y + 1][x] == ' ':
+      grid[y + 1][x] = '-'
+    if y - 1 >= 0 and grid[y - 1][x] == ' ':
+      grid[y - 1][x] = '-'
+    
+    x += 1
+
+  return grid, x, y
 
 # placing highest ranked words first, based on number of intersections with other words
-def generate_puzzle_highest_ranked_first(grid):
+def generate_puzzle_highest_ranked_first(size, grid, clues_dict):
   # ranking words based off number of intersections with all other words
-  ranked_words = numIntersections(clues_dict.keys())
+  ranked_words = ranked_by_num_intersections(clues_dict.keys(), clues_dict)
 
   # sort ranked words (in order of descending number of interesections)
   ranked_words = sorted(ranked_words, key=lambda x: x[0], reverse=True)  
 
   # placing first word
   first_word = ranked_words[0][1]
-  x = size//2 - len(first_word)//2
-  y = size//2
+  grid, x, y = place_first_word(size, first_word, grid)
   whitespace = size * size - len(first_word)
   words_in_puzzle = [first_word]
-  
-  for letter in first_word:
-    grid[y][x] = letter
-    x += 1
-    
+
   # structure to store word positions on crossword, with x and y, and whether the 
   # word is horizontal or vertical
   positioned_words = {first_word: ((x-len(first_word)), y, True)}
   iterations = 0
   
   while whitespace > 0 and iterations < 5000: # and other condition that i havent thought of
-    ranked_words = numIntersections(words_in_puzzle)
+    ranked_words = ranked_by_num_intersections(words_in_puzzle, clues_dict)
+    ranked_words = sorted(ranked_words, key=lambda x: x[0], reverse=True)
     if ranked_words == None:
       break
 
@@ -314,7 +315,6 @@ def generate_puzzle_highest_ranked_first(grid):
     no_word_found = True
     while rank < len(ranked_words) and no_word_found:
       word = ranked_words[rank][1]
-
       if word not in positioned_words:
         intersection_words = contains_intersection(word, words_in_puzzle)
 
@@ -324,17 +324,122 @@ def generate_puzzle_highest_ranked_first(grid):
           # place word on grid
           whitespace -= determine_whitespace_to_remove(grid, placement[0], placement[1], word, placement[2])
           grid = place_on_board(grid, word, placement, positioned_words)
+          no_word_found = False
+      rank += 1
+    iterations += 1
+  
+  pretty_print(grid)
+  return grid, positioned_words
 
-          print(positioned_words)
-          pretty_print(grid)
-          print(word)
-          print(whitespace)
-          
+
+def generate_puzzle_highest_ranked_longest_first(size, grid, clues_dict):
+  # ranking words based off number of intersections with all other words
+  ranked_words = ranked_by_num_intersections(clues_dict.keys(), clues_dict)
+
+  # sort ranked words (in order of descending length and number of interesections)
+  ranked_words = sorted(ranked_words, key=lambda x: (len(x), x[0]), reverse=True)  
+
+  word = ranked_words[0][1]
+  
+  # placing first word
+  grid, x, y = place_first_word(size, word, grid)
+  whitespace = size * size - len(word)
+  words_in_puzzle = [word]
+
+  positioned_words = {word: ((x-len(word)), y, True)}
+  iterations = 0
+  
+  while whitespace > 0 and iterations < 5000:
+    ranked_words = ranked_by_num_intersections(words_in_puzzle, clues_dict)
+    ranked_words = sorted(ranked_words, key=lambda x: (len(x), x[0]), reverse=True)
+    if ranked_words == None:
+      break
+  
+    rank = 0
+    no_word_found = True
+    while rank < len(ranked_words) and no_word_found:
+      word = ranked_words[rank][1]
+      if word not in positioned_words:
+        intersection_words = contains_intersection(word, words_in_puzzle)
+
+        # find ideal placement of word on grid
+        placement = find_placement(grid, word, intersection_words, positioned_words)
+        if placement != None:
+          # place word on grid
+          whitespace -= determine_whitespace_to_remove(grid, placement[0], placement[1], word, placement[2])
+          grid = place_on_board(grid, word, placement, positioned_words)
           no_word_found = False
       rank += 1
     iterations += 1
   
   pretty_print(grid)
   return grid
+
+def generate_puzzle_random_first_word(size, grid, clues_dict):
+  word = random.choice(list(clues_dict))
+
+  grid, x, y = place_first_word(size, word, grid)
+  whitespace = size * size - len(word)
+  words_in_puzzle = [word]
+
+  positioned_words = {word: ((x-len(word)), y, True)}
+  iterations = 0
+
+  while whitespace > 0 and iterations < 5000: # and other condition that i havent thought of
+    ranked_words = ranked_by_num_intersections(words_in_puzzle, clues_dict)
+    ranked_words = sorted(ranked_words, key=lambda x: x[0], reverse=True)
+    if ranked_words == None:
+      break
+
+    rank = 0
+    no_word_found = True
+    while rank < len(ranked_words) and no_word_found:
+      word = ranked_words[rank][1]
+      if word not in positioned_words:
+        intersection_words = contains_intersection(word, words_in_puzzle)
+
+        # find ideal placement of word on grid
+        placement = find_placement(grid, word, intersection_words, positioned_words)
+        if placement != None:
+          # place word on grid
+          whitespace -= determine_whitespace_to_remove(grid, placement[0], placement[1], word, placement[2])
+          grid = place_on_board(grid, word, placement, positioned_words)
+          no_word_found = False
+      rank += 1
+    iterations += 1
   
-generate_puzzle_highest_ranked_first(grid)
+  pretty_print(grid)
+  return grid
+
+
+def score_generated(grid):
+  letters = 0
+  for row in grid:
+    for letter in row:
+      if letter != ' ' and letter != '-':
+        letters += 1
+  return letters / (len(grid) * len(grid))
+
+# remove a word from positioned words if it has the same x, y and direction as another word
+# ex: word1 = SEAS, word2 = SEA (remove word2 because the words start at the same place)
+positioned_words = {'ASEA': (0, 2, True), 'EASE': (1, 0, False), 'SEAS': (3, 0, False), 'SEA': (3, 0, False)}
+def clean_placed_words(positioned_words):
+  cleaned_words = {}
+  for word1 in positioned_words:
+    overlap_found = False
+    for word2 in positioned_words:
+      if (word1 != word2 and positioned_words[word1][0] == positioned_words[word2][0] 
+        and positioned_words[word1][1] == positioned_words[word2][1] and positioned_words[word1][2] == positioned_words[word2][2]): 
+          if len(word1) < len(word2):
+            overlap_found = True
+    if not overlap_found:
+      cleaned_words[word1] = positioned_words[word1]
+  
+  return cleaned_words
+
+# print("first algo")
+# generate_puzzle_highest_ranked_first(grid)
+# print("second algo")
+# generate_puzzle_highest_ranked_longest_first(grid)
+# print ("third algo")
+# generate_puzzle_random_first_word(grid)
