@@ -422,7 +422,6 @@ def score_generated(grid):
 
 # remove a word from positioned words if it has the same x, y and direction as another word
 # ex: word1 = SEAS, word2 = SEA (remove word2 because the words start at the same place)
-positioned_words = {'ASEA': (0, 2, True), 'EASE': (1, 0, False), 'SEAS': (3, 0, False), 'SEA': (3, 0, False)}
 def clean_placed_words(positioned_words):
   cleaned_words = {}
   for word1 in positioned_words:
