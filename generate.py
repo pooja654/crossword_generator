@@ -242,7 +242,7 @@ def find_placement(grid, word, intersection_words, positioned_words):
             word_intersections.append(j)
 
         # check to see if we can intersect a word here
-        is_horizontal = positioned_words[word_on_board][2] == True
+        is_horizontal = positioned_words[word_on_board][2]
         for j in word_intersections:
           if (is_valid_intersection(is_horizontal, x_pos, y_pos, i, j, grid, word)):
             return determine_position(x_pos, y_pos, i, j, is_horizontal)
@@ -343,7 +343,7 @@ def generate_puzzle_highest_ranked_longest_first(size, grid, clues_dict):
   
   # placing first word
   grid, x, y = place_first_word(size, word, grid)
-  whitespace = size * size - len(word)
+  whitespace = size * size - 3*len(word)
   words_in_puzzle = [word]
 
   positioned_words = {word: ((x-len(word)), y, True)}
@@ -373,13 +373,13 @@ def generate_puzzle_highest_ranked_longest_first(size, grid, clues_dict):
     iterations += 1
   
   pretty_print(grid)
-  return grid
+  return grid, positioned_words
 
 def generate_puzzle_random_first_word(size, grid, clues_dict):
   word = random.choice(list(clues_dict))
 
   grid, x, y = place_first_word(size, word, grid)
-  whitespace = size * size - len(word)
+  whitespace = size * size - 3*len(word)
   words_in_puzzle = [word]
 
   positioned_words = {word: ((x-len(word)), y, True)}
@@ -409,7 +409,7 @@ def generate_puzzle_random_first_word(size, grid, clues_dict):
     iterations += 1
   
   pretty_print(grid)
-  return grid
+  return grid, positioned_words
 
 
 def score_generated(grid):
