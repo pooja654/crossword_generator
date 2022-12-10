@@ -297,7 +297,7 @@ def generate_puzzle_highest_ranked_first(size, grid, clues_dict):
   # placing first word
   first_word = ranked_words[0][1]
   grid, x, y = place_first_word(size, first_word, grid)
-  whitespace = size * size - len(first_word)
+  whitespace = size * size - 3*len(first_word)
   words_in_puzzle = [first_word]
 
   # structure to store word positions on crossword, with x and y, and whether the 
