@@ -143,16 +143,18 @@ def generate_crossword(size, numIter, play_layout):
     for i in range(numIter):
         random_grid_temp, positioned_words_random_temp = generate.generate_puzzle_random_first_word(size, generate.create_grid(size), clues_dict)
         positioned_words_random_temp = generate.clean_placed_words(positioned_words_random_temp)
-        score = generate.score_generated(random_grid)
+        score = generate.score_generated_minimize_whitespace(random_grid)
         if score > highest_score:
             highest_score = score
             random_grid = random_grid_temp
             positioned_words_random = positioned_words_random_temp
 
-    if generate.score_generated(grid1) > generate.score_generated(grid2) and generate.score_generated(grid1) > generate.score_generated(random_grid):
+    if (generate.score_generated_minimize_whitespace(grid1) > generate.score_generated_minimize_whitespace(grid2) 
+        and generate.score_generated_minimize_whitespace(grid1) > generate.score_generated_minimize_whitespace(random_grid)):
         grid = grid1
         positioned_words = positioned_words1
-    elif generate.score_generated(grid2) > generate.score_generated(grid1) and generate.score_generated(grid2) > generate.score_generated(random_grid):
+    elif (generate.score_generated_minimize_whitespace(grid2) > generate.score_generated_minimize_whitespace(grid1) 
+    and generate.score_generated_minimize_whitespace(grid2) > generate.score_generated_minimize_whitespace(random_grid)):
         grid = grid2
         positioned_words = positioned_words2
     else:
