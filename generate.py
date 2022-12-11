@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import random
 
-def clean_words_create_grid(size):
+def clean_words(size):
   clues = pd.read_csv('clues.csv')
   all_words = {}
 
@@ -30,6 +30,9 @@ def clean_words_create_grid(size):
       if(not len(word) <= 2):
         clues_dict[word] = all_words[word]
 
+  return clues_dict
+
+def create_grid(size):
   # create grid to match inputted size
   grid = []
   for i in range(size):
@@ -37,8 +40,6 @@ def clean_words_create_grid(size):
     for j in range(size):
       g.append(' ')
     grid.append(g)
-
-  return grid, clues_dict
 
 def pretty_print(g):
   for row in g:
@@ -228,9 +229,6 @@ def find_placement(grid, word, intersection_words, positioned_words):
     intersections = word_on_board_set.union(word_set)
 
     # go through word on board and intersecting letters, find the first intersecting letter that we can place a word at
-    # BALLOON (0 to 6)
-    # JAIL
-
     for i in range(len(word_on_board)):
       if word_on_board[i] in intersections:
         # find all intersections in the word to be placed

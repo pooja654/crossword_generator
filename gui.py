@@ -125,22 +125,23 @@ def generate_grid(size, grid, positioned_words, crossword, word_numbers):
 
 
 def generate_crossword(size, numIter, play_layout):
-    grid, clues_dict = generate.clean_words_create_grid(size)
+    clues_dict = generate.clean_words(size)
+    grid = generate.create_grid(size)
 
     positioned_words = {}
 
     # run each algorithm and select one with the highest score
-    grid1, positioned_words1 = generate.generate_puzzle_highest_ranked_first(size, grid, clues_dict)
+    grid1, positioned_words1 = generate.generate_puzzle_highest_ranked_first(size, generate.create_grid(size), clues_dict)
     positioned_words1 = generate.clean_placed_words(positioned_words1)
 
-    grid2, positioned_words2 = generate.generate_puzzle_highest_ranked_longest_first(size, grid, clues_dict)
+    grid2, positioned_words2 = generate.generate_puzzle_highest_ranked_longest_first(size, generate.create_grid(size), clues_dict)
     positioned_words2 = generate.clean_placed_words(positioned_words2)
 
     random_grid = [[]]
     positioned_words_random = {}
     highest_score = 0
     for i in range(numIter):
-        random_grid_temp, positioned_words_random_temp = generate.generate_puzzle_random_first_word(size, grid, clues_dict)
+        random_grid_temp, positioned_words_random_temp = generate.generate_puzzle_random_first_word(size, generate.create_grid(size), clues_dict)
         positioned_words_random_temp = generate.clean_placed_words(positioned_words_random_temp)
         score = generate.score_generated(random_grid)
         if score > highest_score:
@@ -167,11 +168,11 @@ def generate_crossword(size, numIter, play_layout):
     clues = generate_clues(clues_dict, word_numbers, positioned_words)
     clue_number_to_word_number = format_clues(clues, play_layout)
 
-    return grid, positioned_words, word_numbers, clue_number_to_word_number
+    return grid, positioned_words, word_numbers, clue_number_to_word_number, play_window
     
 
 
-def check_puzzle(positioned_words, correct_grid, values, word_numbers, clue_number_to_word_number, ids):
+def check_puzzle(positioned_words, correct_grid, values, word_numbers, clue_number_to_word_number, play_window):
     crossword = play_window['-CROSSWORD-']
     generate_grid(len(correct_grid), correct_grid, positioned_words, crossword, word_numbers)
     del values['-CROSSWORD-']
@@ -282,7 +283,7 @@ while True:
                     play_layout = make_play_layout()
 
                     # generate crossword with AI
-                    grid, positioned_words, word_numbers, clue_number_to_word_number = generate_crossword(size, 5, play_layout)
+                    grid, positioned_words, word_numbers, clue_number_to_word_number, play_window = generate_crossword(size, 5, play_layout)
                     # word_numbers = create_word_numbers(size, TEST_GRID, TEST_POSITIONED_WORDS)
                     # clues = generate_clues(TEST_CLUES_DICT, word_numbers, TEST_POSITIONED_WORDS)
                     # clue_number_to_word_number = format_clues(clues, play_layout)
@@ -311,7 +312,7 @@ while True:
             play_screen = False
         elif event == '-CHECK PUZZLE-':
             clear_puzzle(ids)
-            ids, correct = check_puzzle(positioned_words, grid, values, word_numbers, clue_number_to_word_number, ids)
+            ids, correct = check_puzzle(positioned_words, grid, values, word_numbers, clue_number_to_word_number, play_window)
             # ids, correct = check_puzzle(TEST_POSITIONED_WORDS, TEST_GRID, values, word_numbers, clue_number_to_word_number, ids)
 
             # if puzzle was correct
