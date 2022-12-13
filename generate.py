@@ -856,24 +856,73 @@ def generate_puzzle_require_alternation(size, grid, clues_dict):
 
   next_placement_horizontal = False
 
-  while rank < len(ranked_words) and no_word_found:
+  while whitespace > 0 and iterations < 5000: # and other condition that i havent thought of
+    ranked_words = ranked_without_intersections(grid, clues_dict)
+    
+    if ranked_words == None:
+      break
+
+    rank = 0
+    no_word_found = True
+    while rank < len(ranked_words) and no_word_found:
       word = ranked_words[rank][1]
       if word not in positioned_words:
         intersection_words = contains_intersection(word, words_in_puzzle)
-
         # find ideal placement of word on grid
         placement = find_placement_direction_constrained(grid, word, intersection_words, positioned_words, next_placement_horizontal)
         if placement != None:
           # place word on grid
-          whitespace -= determine_whitespace_to_remove(grid, placement[0], placement[1], word, placement[2])
+          whitespace -= determine_whitespace_to_remove(grid, placement[0], 
+          placement[1], word, placement[2])
           grid = place_on_board(grid, word, placement, positioned_words)
           no_word_found = False
       rank += 1
-      
-      if no_word_found:
-        break
-      iterations += 1
-  
+    if no_word_found:
+      break
+    iterations += 1
+  return grid, positioned_words
+
+# ALGORITHM 5
+# SAME AS 4 BUT WITH RANDOM FIRST WORD
+
+def generate_puzzle_require_alternation_random_first_word(size, grid, clues_dict):
+  # placing first word
+  first_word = random.choice(list(clues_dict))
+  grid, x, y = place_first_word(size, first_word, grid)
+  whitespace = size * size - 3*len(first_word)
+  words_in_puzzle = [first_word]
+
+  # structure to store word positions on crossword, with x and y, and whether the 
+  # word is horizontal or vertical
+  positioned_words = {first_word: ((x-len(first_word)), y, True)}
+  iterations = 0
+
+  next_placement_horizontal = False
+
+  while whitespace > 0 and iterations < 5000: # and other condition that i havent thought of
+    ranked_words = ranked_without_intersections(grid, clues_dict)
+    
+    if ranked_words == None:
+      break
+
+    rank = 0
+    no_word_found = True
+    while rank < len(ranked_words) and no_word_found:
+      word = ranked_words[rank][1]
+      if word not in positioned_words:
+        intersection_words = contains_intersection(word, words_in_puzzle)
+        # find ideal placement of word on grid
+        placement = find_placement_direction_constrained(grid, word, intersection_words, positioned_words, next_placement_horizontal)
+        if placement != None:
+          # place word on grid
+          whitespace -= determine_whitespace_to_remove(grid, placement[0], 
+          placement[1], word, placement[2])
+          grid = place_on_board(grid, word, placement, positioned_words)
+          no_word_found = False
+      rank += 1
+    if no_word_found:
+      break
+    iterations += 1
   return grid, positioned_words
 
 
