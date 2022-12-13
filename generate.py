@@ -7,7 +7,7 @@ import random
 # Returns: the cleaned clues dictionary, dictionary of letters ranked by their 
 # frequency in the dataset
 def clean_words(size):
-  clues = pd.read_csv('clues.csv')
+  clues = pd.read_csv('custom_clues.csv')
   all_words = {}
 
   # clean data and add to dictionary
@@ -18,16 +18,6 @@ def clean_words(size):
     # if (not (row['clue']).isna() and not row['answer'].isna()):
     # if row['clue']
     all_words[row['answer']] = row['clue']
-
-  # print(clues_dict)
-    
-
-  # # get user input
-  # size = int(input("What size would you like the crossword to be? Please pick 
-  # a number between 6 and 20: "))
-  # while size > 20 or size < 4:
-  #   size = int(input("This size is out of bounds. What size would you like the 
-  # crossword to be? Please pick a number between 6 and 20: "))
 
   # remove words longer than size of puzzle and remove 1 and 2-letter words
   clues_dict = {}
@@ -1007,3 +997,7 @@ def clean_placed_words(positioned_words):
 
 # pretty_print(TEST_GRID)
 # print(find_placement_direction_constrained(TEST_GRID, 'BED', TEST_INTERSECTION_SET, {'ASEA':(0, 2, True), 'BEAN':(0, 0, False)}, True))
+
+grid, positioned_words = generate_puzzle_highest_ranked_first(5,  create_grid(5), clean_words(5))
+pretty_print(grid)
+print(positioned_words)
