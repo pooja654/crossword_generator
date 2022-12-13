@@ -233,6 +233,7 @@ def generate_crossword(size, numIter, play_layout):
     # draw the crossword on the new play window
     generate_grid(size, grid, positioned_words, crossword, word_numbers)
     generate.pretty_print(grid)
+    print(positioned_words)
 
     return grid, positioned_words, word_numbers, clue_number_to_word_number, play_window
     
