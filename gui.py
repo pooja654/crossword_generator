@@ -18,7 +18,7 @@ BLOCK_SIZE = 25
 def make_home_layout():
     return [
         [sg.Text("Hello from AI Crossword!", font=("Courier 25", 30), pad=(20, 20))],
-        [sg.Text('Enter the size of your crossword (6 to 20):', font=("Courier 25", 20)), sg.InputText()],
+        [sg.Text('Enter the size of your crossword (4 to 15):', font=("Courier 25", 20)), sg.InputText()],
         [sg.Button("Close", font=("Courier 25", 16), key='-CLOSE HOME-'), sg.Button("Make Crossword", font=("Courier 25", 16), key='-PLAY BUTTON-')],
         [sg.Text("INVALID SIZE, TRY AGAIN", key='-INVALID SIZE-', visible=False)]
     ]
@@ -42,7 +42,7 @@ def make_play_layout():
 def make_end_window(time_took, word_numbers, grid, positioned_words):
     end_layout = [
             [sg.Text("Congratulations!")],
-            [sg.Text("Time: " + time_took + " seconds")],
+            [sg.Text("Time: " + time_took)],
             [sg.Graph((500, 500), (0, 400), (400, 0), key='-CROSSWORD-',
                     change_submits=True, drag_submits=False)],
             [sg.Button("Close", key='-CLOSE END OF GAME-', visible=True), sg.Button("Back to Home", key='-BACK TO HOME-', visible=True)]
@@ -178,12 +178,14 @@ def generate_crossword(size, numIter, play_layout):
     # run each algorithm and select one with the highest score
     grid1, positioned_words1 = generate.generate_puzzle_highest_ranked_first(size, generate.create_grid(size), clues_dict)
     positioned_words1 = generate.clean_placed_words(positioned_words1)
+    grid1_score = generate.score_generated_minimize_whitespace(grid1)
 
     grid2, positioned_words2 = generate.generate_puzzle_highest_ranked_longest_first(size, generate.create_grid(size), clues_dict)
     positioned_words2 = generate.clean_placed_words(positioned_words2)
+    grid2_score = generate.score_generated_minimize_whitespace(grid2)
 
-    random_grid = [[]]
-    positioned_words_random = {}
+    grid3 = [[]]
+    positioned_words3 = {}
     highest_score = 0
     # create `numIter` random crosswords and select the highest scoring crossword
     for i in range(numIter):
@@ -192,31 +194,68 @@ def generate_crossword(size, numIter, play_layout):
         score = generate.score_generated_minimize_whitespace(random_grid_temp)
         if score > highest_score:
             highest_score = score
-            random_grid = random_grid_temp
-            positioned_words_random = positioned_words_random_temp
+            grid3 = random_grid_temp
+            positioned_words3 = positioned_words_random_temp
+    positioned_words3 = generate.clean_placed_words(positioned_words3)
+    grid3_score = generate.score_generated_minimize_whitespace(grid3)
 
-    # if the grid created by selecting the highest ranked word had a higher score than the grid created by selecting 
-    # the highest ranked word of the words of maximum length
-    if (generate.score_generated_minimize_whitespace(grid1) > generate.score_generated_minimize_whitespace(grid2)): 
-        # if the grid created by selecting the highest ranked word had a higher score than the random grid
-        if (generate.score_generated_minimize_whitespace(grid1) > generate.score_generated_minimize_whitespace(random_grid)):
-            grid = grid1
-            positioned_words = positioned_words1
-        else: 
-            grid = random_grid
-            positioned_words = positioned_words_random
+    grid4, positioned_words4 = generate.generate_puzzle_require_alternation(size, generate.create_grid(size), clues_dict)
+    positioned_words4 = generate.clean_placed_words(positioned_words4)
+    grid4_score = generate.score_generated_minimize_whitespace(grid4)
 
-    # if the grid created by selecting the highest ranked word of the words of maximum length had a higher score than the grid 
-    # created by selecting the highest ranked word 
-    else: 
-        # if the grid created by selecting the highest ranked word of the words of maximum length had a higher score than 
-        # the random grid
-        if (generate.score_generated_minimize_whitespace(grid2) > generate.score_generated_minimize_whitespace(random_grid)):
-            grid = grid2
-            positioned_words = positioned_words2
-        else:
-            grid = random_grid
-            positioned_words = positioned_words_random
+    grid5 = [[]]
+    positioned_words5 = {}
+    highest_score = 0
+    # create `numIter` random crosswords and select the highest scoring crossword
+    for i in range(numIter):
+        random_grid_temp, positioned_words_random_temp = generate.generate_puzzle_require_alternation_random_first_word(size, generate.create_grid(size), clues_dict)
+        positioned_words_random_temp = generate.clean_placed_words(positioned_words_random_temp)
+        score = generate.score_generated_minimize_whitespace(random_grid_temp)
+        if score > highest_score:
+            highest_score = score
+            grid5 = random_grid_temp
+            positioned_words5 = positioned_words_random_temp
+    positioned_words5 = generate.clean_placed_words(positioned_words5)
+    grid5_score = generate.score_generated_minimize_whitespace(grid5)
+    
+    max_score = max(grid1_score, grid2_score, grid3_score, grid4_score, grid5_score)
+    if grid5_score == max_score:
+        grid = grid5
+        positioned_words = positioned_words5
+    elif grid3_score == max_score:
+        grid = grid3
+        positioned_words = positioned_words3
+    elif grid4_score == max_score:
+        grid = grid4
+        positioned_words = positioned_words4
+    elif grid1_score == max_score:
+        grid = grid1
+        positioned_words = positioned_words1
+    else:
+        grid = grid2
+        positioned_words = positioned_words2
+    # # if the grid created by selecting the highest ranked word had a higher score than the grid created by selecting 
+    # # the highest ranked word of the words of maximum length
+    # if (generate.score_generated_minimize_whitespace(grid1) > generate.score_generated_minimize_whitespace(grid2)): 
+    #     # if the grid created by selecting the highest ranked word had a higher score than the random grid
+    #     if (generate.score_generated_minimize_whitespace(grid1) > generate.score_generated_minimize_whitespace(random_grid)):
+    #         grid = grid1
+    #         positioned_words = positioned_words1
+    #     else: 
+    #         grid = random_grid
+    #         positioned_words = positioned_words_random
+
+    # # if the grid created by selecting the highest ranked word of the words of maximum length had a higher score than the grid 
+    # # created by selecting the highest ranked word 
+    # else: 
+    #     # if the grid created by selecting the highest ranked word of the words of maximum length had a higher score than 
+    #     # the random grid
+    #     if (generate.score_generated_minimize_whitespace(grid2) > generate.score_generated_minimize_whitespace(random_grid)):
+    #         grid = grid2
+    #         positioned_words = positioned_words2
+    #     else:
+    #         grid = random_grid
+    #         positioned_words = positioned_words_random
 
     # assign numbers to each word on the board
     word_numbers = create_word_numbers(size, grid, positioned_words)
@@ -268,7 +307,7 @@ def check_puzzle(positioned_words, correct_grid, values, word_numbers, clue_numb
         for key in word_numbers:
             if word_numbers[key] == word_number:
                 answer_word = key
-        input_word = values[i].upper()
+        input_word = values[i].upper().replace(" ", "")
         x = positioned_words[answer_word][0]
         y = positioned_words[answer_word][1]
         horizontal = positioned_words[answer_word][2]
@@ -357,18 +396,28 @@ def generate_correct_grid(size, grid, positioned_words, crossword, word_numbers)
                 # create black text box
                 crossword.draw_rectangle((x * BLOCK_SIZE + 5, y * BLOCK_SIZE + 3), (x * BLOCK_SIZE + BLOCK_SIZE + 5, y * BLOCK_SIZE + BLOCK_SIZE + 3), line_color='black', fill_color='black')
 
+def display_time(seconds):
+    if seconds > 60:
+        minutes, seconds = divmod(seconds, 60)
+        return str(minutes) + ' minutes and ' + str(seconds) + ' seconds'
+    else:
+        return str(seconds) + ' seconds'
+
 # start on the home screen
 home_screen = True
 end_screen = False
 play_screen = False
 exit_game = False
 clue_number_to_word_number = {}
+end_window = None
 
 while True:
     window = sg.Window("Crossword", make_home_layout(), size=(1000,1000), margins=(50, 50), element_justification='c')
 
     while home_screen:
         event, values = window.read()
+        if end_window != None:
+            end_window.close()
         if event == sg.WIN_CLOSED or event == "-CLOSE HOME-" or event == '-CLOSE PLAY-':
             exit_game = True
             home_screen = False
@@ -386,7 +435,7 @@ while True:
                 window["-INVALID SIZE-"].update(visible=True)
             else:
                 size = int(values[0])
-                if size < 4 or size > 20:
+                if size < 4 or size > 15:
                     window["-INVALID SIZE-"].update(visible=True)
                 else:
                     play_layout = make_play_layout()
@@ -404,7 +453,8 @@ while True:
 
     while play_screen:
         event, values = play_window.read()
-        print(values)
+        if end_window != None:
+            end_window.close()
         if event == sg.WIN_CLOSED or event == '-CLOSE PLAY-':
             exit_game = True
             home_screen = False
@@ -413,12 +463,11 @@ while True:
         elif event == '-CHECK PUZZLE-':
             clear_puzzle(ids)
             ids, correct = check_puzzle(positioned_words, grid, values, word_numbers, clue_number_to_word_number, play_window)
-            # ids, correct = check_puzzle(TEST_POSITIONED_WORDS, TEST_GRID, values, word_numbers, clue_number_to_word_number, ids)
 
             # if puzzle was correct
             if correct:
                 end_time = time.time()
-                end_window = make_end_window(str(round(end_time - start_time)), word_numbers, grid, positioned_words)
+                end_window = make_end_window(display_time(round(end_time - start_time)), word_numbers, grid, positioned_words)
                 end_screen = True
                 play_screen = False
                 play_window.close()

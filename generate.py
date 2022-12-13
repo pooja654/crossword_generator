@@ -15,9 +15,6 @@ def clean_words(size):
 
   clues = clues.dropna()
   for index, row in clues.iterrows():
-    
-    # if (not (row['clue']).isna() and not row['answer'].isna()):
-    # if row['clue']
     all_words[row['answer']] = row['clue']
 
   # remove words longer than size of puzzle and remove 1 and 2-letter words
