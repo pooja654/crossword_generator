@@ -14,7 +14,7 @@ TEST_CLUES_DICT = {'ASEA':'this is the clue for asea', 'EASE':'this is the clue 
 BLOCK_SIZE = 25
 
 # Create the layout for the home screen with an introduction greeting and a query for crossword size
-# This returns the home window layout
+# Returns: the home window layout
 def make_home_layout():
     return [
         [sg.Text("Hello from AI Crossword!", font=("Courier 25", 30), pad=(20, 20))],
@@ -26,7 +26,7 @@ def make_home_layout():
 
 # Create the layout for the play screen with a graph element as the crossword grid 
 # Generate clues in a list format with text inputs to insert answers to the crossword
-# This returns the play window layout with the Crossword
+# Returns: the play window layout with the Crossword
 def make_play_layout():
     return [
         [sg.Text("Let's Play!", key='-START-')],
@@ -38,7 +38,7 @@ def make_play_layout():
 
 # Create the layout for the end screen 
 # Include the time the player took to complete the crossword
-# This returns the end_window layout to be displayed
+# Returns: the end_window layout to be displayed
 def make_end_window(time_took, word_numbers, grid, positioned_words):
     end_layout = [
             [sg.Text("Congratulations!")],
@@ -58,23 +58,27 @@ def make_end_window(time_took, word_numbers, grid, positioned_words):
 # `word_numbers` is a dictionary mapping the number for the word and clue to the word itself
 # `positioned_words` is a dictionary mapping the words that were placed on the board to a tuple (x, y, is_horizontal)
 # which specifies the starting position of the word and the direction it was placed
-# This returns a dictionary mapping the 'Horizontal' to (word number, clue) and 'Vertical' to (word number, clue) for 
+# Returns: a dictionary mapping the 'Horizontal' to (word number, clue) and 'Vertical' to (word number, clue) for 
 # each clue
 def generate_clues(clues_dict, word_numbers, positioned_words):
     clues = {'Horizontal' : [], 'Vertical' : []}
-    for word in word_numbers:
+    horizontal = word_numbers[0]
+    vertical = word_numbers[1]
+    for word in horizontal:
         clue = clues_dict[word]
-        if positioned_words[word][2]:
-            clues['Horizontal'].append((word_numbers[word], clue))
-        else:
-            clues['Vertical'].append((word_numbers[word], clue))
+        clues['Horizontal'].append((horizontal[word], clue))
+    
+    for word in vertical:
+        clue = clues_dict[word]
+        clues['Vertical'].append((vertical[word], clue))
+        
     return clues
 
 
 # Format the clues in the play screen layout
 # `clues` is a dictionary where 'Horizontal' is mapped to a list of (clue number, clue) for all horizontal clues and
 # 'Vertical' is mapped to a list of (clue number, clue) for all vertical clues
-# This returns a mapping of the clue to the word number
+# Returns: a mapping of the clue to a tuple of the the word number and the word's direction
 def format_clues(clues, play_layout):
     horizontal = [[sg.Text('Across')]]
     vertical = [[sg.Text('Down')]]
@@ -91,7 +95,7 @@ def format_clues(clues, play_layout):
                 text_box = False
             else:
                 horizontal += [[sg.Text(t, justification='r', pad=(5,1))]]
-            clue_number_to_word_number[clue_number] = clues['Horizontal'][i][0]
+            clue_number_to_word_number[clue_number] = (clues['Horizontal'][i][0], True)
         clue_number += 1
 
     # iterate over vertical clues
@@ -104,7 +108,7 @@ def format_clues(clues, play_layout):
                 text_box = False
             else:
                 vertical += [[sg.Text(t, justification='r', pad=(5,1))]]
-            clue_number_to_word_number[clue_number] = clues['Vertical'][i][0]
+            clue_number_to_word_number[clue_number] = (clues['Vertical'][i][0], False)
         clue_number += 1
 
     play_layout.append([sg.Column(horizontal, element_justification='l'), sg.Column(vertical, element_justification='l')])
@@ -117,18 +121,41 @@ def format_clues(clues, play_layout):
 # `grid` is the completed crossword with the words placed
 # `positioned_words` is a dictionary mapping the word to (x, y, is_horizontal) which specifies the starting position
 # of the word and the direction it was placed
+# Returns: dictionaries of horizontal words mapped to their word numbers and 
+# vertical words mapped to their word numbers
 def create_word_numbers(size, grid, positioned_words):
-    word_numbers = {}
+    numbered_grid = []
+    for i in range(size):
+        row = []
+        for j in range(size):
+            row.append(0)
+        numbered_grid.append(row)
+
+    word_numbers_horizontal = {}
+    word_numbers_vertical = {}
     number = 1
     for y in range(size):
         for x in range(size):
             if grid[y][x] != ' ' and grid[y][x] != '-':
                 for key in positioned_words.keys():
-                    if positioned_words[key] == (x, y, True) or positioned_words[key] == (x, y, False):
-                        if key not in word_numbers:
-                            word_numbers[key] = number
-                            number += 1
-    return word_numbers
+                    if positioned_words[key] == (x, y, True):
+                        if key not in word_numbers_horizontal:
+                            if numbered_grid[y][x] == 0:
+                                word_numbers_horizontal[key] = number
+                                numbered_grid[y][x] = number
+                                number += 1  
+                            else:
+                                word_numbers_horizontal[key] = numbered_grid[y][x]                 
+                    
+                    elif positioned_words[key] == (x, y, False):
+                        if key not in word_numbers_vertical:
+                            if numbered_grid[y][x] == 0:
+                                word_numbers_vertical[key] = number
+                                numbered_grid[y][x] = number
+                                number += 1  
+                            else:
+                                word_numbers_vertical[key] = numbered_grid[y][x]    
+    return [word_numbers_horizontal, word_numbers_vertical]
 
 
 # Create the crossword grid to be drawn on the Graph element in the play layout
@@ -147,9 +174,12 @@ def generate_grid(size, grid, positioned_words, crossword, word_numbers):
                 crossword.draw_rectangle((x * BLOCK_SIZE + 5, y * BLOCK_SIZE + 3), (x * BLOCK_SIZE + BLOCK_SIZE + 5, y * BLOCK_SIZE + BLOCK_SIZE + 3), line_color='black', fill_color='white')
                 
                 # add numbers to top left of block for the first letter of the word
-                for word in word_numbers:
+                for word in word_numbers[0]:
                     if positioned_words[word][0] == x and positioned_words[word][1] == y:
-                        crossword.draw_text('{}'.format(word_numbers[word]),(x * BLOCK_SIZE + 10, y * BLOCK_SIZE + 8))
+                        crossword.draw_text('{}'.format(word_numbers[0][word]),(x * BLOCK_SIZE + 10, y * BLOCK_SIZE + 8))
+                for word in word_numbers[1]:
+                    if positioned_words[word][0] == x and positioned_words[word][1] == y:
+                        crossword.draw_text('{}'.format(word_numbers[1][word]),(x * BLOCK_SIZE + 10, y * BLOCK_SIZE + 8))
     
             else:
                 # create black text box
@@ -169,6 +199,8 @@ def generate_grid(size, grid, positioned_words, crossword, word_numbers):
 # `word_numbers` is a dictionary mapping the number the word was assigned to the word
 # `clue_number_to_word_number` is a mapping of the clue number which is determined by the play layout and the word number
 # `play_window` is the window which includes the grid and the clues
+# Returns: the chosen crossword grid, words mapped to their positions, words mapped to their clue numbers, 
+# a mapping of clue number to its word number and direction, and the play window
 def generate_crossword(size, numIter, play_layout):
     # clean words and create grid
     clues_dict, ranked_letters = generate.clean_words(size)
@@ -234,35 +266,15 @@ def generate_crossword(size, numIter, play_layout):
     else:
         grid = grid2
         positioned_words = positioned_words2
-    # # if the grid created by selecting the highest ranked word had a higher score than the grid created by selecting 
-    # # the highest ranked word of the words of maximum length
-    # if (generate.score_generated_minimize_whitespace(grid1) > generate.score_generated_minimize_whitespace(grid2)): 
-    #     # if the grid created by selecting the highest ranked word had a higher score than the random grid
-    #     if (generate.score_generated_minimize_whitespace(grid1) > generate.score_generated_minimize_whitespace(random_grid)):
-    #         grid = grid1
-    #         positioned_words = positioned_words1
-    #     else: 
-    #         grid = random_grid
-    #         positioned_words = positioned_words_random
 
-    # # if the grid created by selecting the highest ranked word of the words of maximum length had a higher score than the grid 
-    # # created by selecting the highest ranked word 
-    # else: 
-    #     # if the grid created by selecting the highest ranked word of the words of maximum length had a higher score than 
-    #     # the random grid
-    #     if (generate.score_generated_minimize_whitespace(grid2) > generate.score_generated_minimize_whitespace(random_grid)):
-    #         grid = grid2
-    #         positioned_words = positioned_words2
-    #     else:
-    #         grid = random_grid
-    #         positioned_words = positioned_words_random
+    
 
     # assign numbers to each word on the board
     word_numbers = create_word_numbers(size, grid, positioned_words)
 
     # generate and format clues on the play screen 
     clues = generate_clues(clues_dict, word_numbers, positioned_words)
-    clue_number_to_word_number = format_clues(clues, play_layout)
+    clue_number_to_word_number_direction = format_clues(clues, play_layout)
 
     # create a new window for the play screen 
     play_window = sg.Window("Crossword", play_layout, size=(1000,1000), margins=(50, 50))
@@ -274,7 +286,7 @@ def generate_crossword(size, numIter, play_layout):
     generate.pretty_print(grid)
     print(positioned_words)
 
-    return grid, positioned_words, word_numbers, clue_number_to_word_number, play_window
+    return grid, positioned_words, word_numbers, clue_number_to_word_number_direction, play_window
     
 
 # Check the inputs of the user against the correct puzzle generated by the AI
@@ -285,7 +297,7 @@ def generate_crossword(size, numIter, play_layout):
 # `word_numbers` is a dictionary mapping the number the word was assigned to the word
 # `clue_number_to_word_number` is a mapping of the clue number which is determined by the play layout and the word number
 # `play_window` is the window which includes the grid and the clues
-def check_puzzle(positioned_words, correct_grid, values, word_numbers, clue_number_to_word_number, play_window):
+def check_puzzle(positioned_words, correct_grid, values, word_numbers, clue_number_to_word_number_direction, play_window):
     crossword = play_window['-CROSSWORD-']
     generate_grid(len(correct_grid), correct_grid, positioned_words, crossword, word_numbers)
     del values['-CROSSWORD-']
@@ -303,10 +315,15 @@ def check_puzzle(positioned_words, correct_grid, values, word_numbers, clue_numb
 
     # iterate over each user input
     for i in range(len(values)):
-        word_number = clue_number_to_word_number[i] 
-        for key in word_numbers:
-            if word_numbers[key] == word_number:
-                answer_word = key
+        (word_number, input_horizontal) = clue_number_to_word_number_direction[i] 
+        if(input_horizontal):
+            for key in word_numbers[0]:
+                if word_numbers[0][key] == word_number:
+                    answer_word = key
+        else:
+            for key in word_numbers[1]:
+                if word_numbers[1][key] == word_number:
+                    answer_word = key
         input_word = values[i].upper().replace(" ", "")
         x = positioned_words[answer_word][0]
         y = positioned_words[answer_word][1]
@@ -325,10 +342,15 @@ def check_puzzle(positioned_words, correct_grid, values, word_numbers, clue_numb
                 crossword.draw_rectangle((x * BLOCK_SIZE + 5, y * BLOCK_SIZE + 3), (x * BLOCK_SIZE + BLOCK_SIZE + 5, y * BLOCK_SIZE + BLOCK_SIZE + 3), line_color='black', fill_color='white')
 
             # iterate over words in word numbers
-            for word in word_numbers:
+            for word in word_numbers[0]:
                 # if current position is the start of a word, draw the word number
                 if positioned_words[word][0] == x and positioned_words[word][1] == y:
-                    crossword.draw_text('{}'.format(word_numbers[word]),(x * BLOCK_SIZE + 10, y * BLOCK_SIZE + 8))
+                    crossword.draw_text('{}'.format(word_numbers[0][word]),(x * BLOCK_SIZE + 10, y * BLOCK_SIZE + 8))
+
+            for word in word_numbers[1]:
+                # if current position is the start of a word, draw the word number
+                if positioned_words[word][0] == x and positioned_words[word][1] == y:
+                    crossword.draw_text('{}'.format(word_numbers[1][word]),(x * BLOCK_SIZE + 10, y * BLOCK_SIZE + 8))
 
             # place the letter and append the id of the draw_text to `new_ids`
             letter_loc = (x * BLOCK_SIZE + 18, y * BLOCK_SIZE + 17)
@@ -350,9 +372,13 @@ def check_puzzle(positioned_words, correct_grid, values, word_numbers, clue_numb
                     crossword.draw_rectangle((x * BLOCK_SIZE + 5, (y+j) * BLOCK_SIZE + 3), (x * BLOCK_SIZE + BLOCK_SIZE + 5, (y+j) * BLOCK_SIZE + BLOCK_SIZE + 3), line_color='red', fill_color='white')
 
             # redraw the word number if the grid square being redrawn has a word number
-            for word in word_numbers:
+            for word in word_numbers[0]:
                 if positioned_words[word][0] == x and positioned_words[word][1] == y:
-                    crossword.draw_text('{}'.format(word_numbers[word]),(x * BLOCK_SIZE + 10, y * BLOCK_SIZE + 8))
+                    crossword.draw_text('{}'.format(word_numbers[0][word]),(x * BLOCK_SIZE + 10, y * BLOCK_SIZE + 8))
+                    
+            for word in word_numbers[1]:
+                if positioned_words[word][0] == x and positioned_words[word][1] == y:
+                    crossword.draw_text('{}'.format(word_numbers[1][word]),(x * BLOCK_SIZE + 10, y * BLOCK_SIZE + 8))
 
     # update the grid on the window
     play_window['-CROSSWORD-'].update()
@@ -387,15 +413,22 @@ def generate_correct_grid(size, grid, positioned_words, crossword, word_numbers)
                 crossword.draw_text('{}'.format(grid[y][x]), letter_loc, font='Courier 25')
                 
                 # add numbers to top left of block
-                for word in word_numbers:
+                for word in word_numbers[0]:
                     if positioned_words[word][0] == x and positioned_words[word][1] == y:
-                        crossword.draw_text('{}'.format(word_numbers[word]),(x * BLOCK_SIZE + 10, y * BLOCK_SIZE + 8))
+                        crossword.draw_text('{}'.format(word_numbers[0][word]),(x * BLOCK_SIZE + 10, y * BLOCK_SIZE + 8))
+                
+                for word in word_numbers[1]:
+                    if positioned_words[word][0] == x and positioned_words[word][1] == y:
+                        crossword.draw_text('{}'.format(word_numbers[1][word]),(x * BLOCK_SIZE + 10, y * BLOCK_SIZE + 8))
             
             # if the block should not have a letter
             else:
                 # create black text box
                 crossword.draw_rectangle((x * BLOCK_SIZE + 5, y * BLOCK_SIZE + 3), (x * BLOCK_SIZE + BLOCK_SIZE + 5, y * BLOCK_SIZE + BLOCK_SIZE + 3), line_color='black', fill_color='black')
 
+# Displays time taken by user to perform crossword in terms of minutes and seconds
+# `seconds` is the time taken by the user to solve the crossword in seconds
+# Returns: a string of the user's time in terms of seconds and possibly minutes
 def display_time(seconds):
     if seconds > 60:
         minutes, seconds = divmod(seconds, 60)
@@ -441,8 +474,8 @@ while True:
                     play_layout = make_play_layout()
 
                     # generate crossword with AI
-                    grid, positioned_words, word_numbers, clue_number_to_word_number, play_window = generate_crossword(size, 5, play_layout)
-                    
+                    grid, positioned_words, word_numbers, clue_number_to_word_number_direction, play_window = generate_crossword(size, 5, play_layout)
+
                     start_time = time.time()
                     window.close()
                     home_screen = False
@@ -462,7 +495,7 @@ while True:
             play_screen = False
         elif event == '-CHECK PUZZLE-':
             clear_puzzle(ids)
-            ids, correct = check_puzzle(positioned_words, grid, values, word_numbers, clue_number_to_word_number, play_window)
+            ids, correct = check_puzzle(positioned_words, grid, values, word_numbers, clue_number_to_word_number_direction, play_window)
 
             # if puzzle was correct
             if correct:

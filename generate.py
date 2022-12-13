@@ -359,13 +359,8 @@ word_intersection, grid, word):
     # check spot above and below of the word to be placed to make sure no letter is there:
     y_above_word = y_pos_intersection  - word_intersection - 1
     y_below_word = y_pos_intersection + (len(word) - word_intersection)
-    print("y above and below")
-    print(word)
-    print(y_above_word)
-    print(y_below_word)
-    print("y_pos_int: " + str(y_pos_intersection))
-    print("word_int: " + str(word_intersection))
-    if y_above_word > 0 and not (grid[y_above_word][x_pos_intersection] == ' ' or grid[y_above_word][x_pos_intersection] == '-'):
+
+    if y_above_word >= 0 and not (grid[y_above_word][x_pos_intersection] == ' ' or grid[y_above_word][x_pos_intersection] == '-'):
         return False
     if (y_below_word < len(grid)) and not (grid[y_below_word][x_pos_intersection] == ' ' or grid[y_below_word][x_pos_intersection] == '-'):
         return False
@@ -390,13 +385,8 @@ word_intersection, grid, word):
     # check spot to the left and right of the word to be placed to make sure no letter is there:
     x_left_of_word = x_pos_intersection  - word_intersection - 1
     x_right_of_word = x_pos_intersection + (len(word) - word_intersection)
-    print("x left and right")
-    print(word)
-    print(x_left_of_word)
-    print(x_right_of_word)
-    print("x_pos_int: " + str(x_pos_intersection))
-    print("word_int: " + str(word_intersection))
-    if x_left_of_word > 0 and not (grid[y_pos_intersection][x_left_of_word] == ' ' or grid[y_pos_intersection][x_left_of_word] == '-'):
+
+    if x_left_of_word >= 0 and not (grid[y_pos_intersection][x_left_of_word] == ' ' or grid[y_pos_intersection][x_left_of_word] == '-'):
         return False
     if (x_right_of_word < len(grid)) and not (grid[y_pos_intersection][x_right_of_word] == ' ' or grid[y_pos_intersection][x_right_of_word] == '-'):
         return False
@@ -733,7 +723,7 @@ def generate_puzzle_highest_ranked_first(size, grid, clues_dict):
   positioned_words = {first_word: ((x-len(first_word)), y, True)}
   iterations = 0
   
-  while whitespace > 0 and iterations < 5000: # and other condition that i havent thought of
+  while whitespace > 0 and iterations < 5000: 
     ranked_words = ranked_without_intersections(grid, clues_dict)
 
     if ranked_words == None:
@@ -843,7 +833,7 @@ def generate_puzzle_random_first_word(size, grid, clues_dict):
   positioned_words = {word: ((x-len(word)), y, True)}
   iterations = 0
 
-  while whitespace > 0 and iterations < 5000: # and other condition that i havent thought of
+  while whitespace > 0 and iterations < 5000: 
     ranked_words = ranked_without_intersections(grid, clues_dict)
     
     if ranked_words == None:
@@ -871,8 +861,20 @@ def generate_puzzle_random_first_word(size, grid, clues_dict):
   return grid, positioned_words
   
 # ALGORITHM 4
-# THIS MAY HELP OUR VERTICAL PROBLEM
 
+# This is the fourth algorithm generating a crossword puzzle. With this algorithm, 
+# we choose a the highest ranked word to be placed first horizontally. The next word to be
+# placed on the grid will then be the next highest ranked word, but will be placed
+# vertically. Words are placed on the grid based on rank (number of intersections 
+# the word has with other words on the board), starting with the highest ranked 
+# word, and continuing on to the next highest ranked word while alternating placement
+# alignment and so on until the completion of the generation of the puzzle.
+# `size` is the length and width of the crossword which was inputted by the user
+# `grid` is the current crossword grid
+# `clues_dict` is the cleaned dictionary of words to clues
+# Returns: a generated crossword (the updated grid) of size inputted by the user as well as a 
+# dictionary of each word on the board mapped to a triple of its x and y positions, 
+# as well as its horizontal/vertical alignment (True for horizontal, False for vertical)
 def generate_puzzle_require_alternation(size, grid, clues_dict):
   # ranking words based off number of intersections with all other words
   ranked_words = ranked_by_num_intersections(clues_dict.keys(), clues_dict)
@@ -890,7 +892,7 @@ def generate_puzzle_require_alternation(size, grid, clues_dict):
 
   next_placement_horizontal = False
 
-  while whitespace > 0 and iterations < 5000: # and other condition that i havent thought of
+  while whitespace > 0 and iterations < 5000:
     ranked_words = ranked_without_intersections(grid, clues_dict)
     
     if ranked_words == None:
@@ -919,7 +921,20 @@ def generate_puzzle_require_alternation(size, grid, clues_dict):
   return grid, positioned_words
 
 # ALGORITHM 5
-# SAME AS 4 BUT WITH RANDOM FIRST WORD
+
+# This is the fifth algorithm generating a crossword puzzle. With this algorithm, 
+# we choose a random word to be placed first horizontally. The next word to be
+# placed on the grid will then be the highest ranked word, but will be placed
+# vertically. The following words placed on the grid based on rank (number of intersections 
+# the word has with other words on the board), starting with the highest ranked 
+# word, and continuing on to the next highest ranked word while alternating placement
+# alignment and so on until the completion of the generation of the puzzle.
+# `size` is the length and width of the crossword which was inputted by the user
+# `grid` is the current crossword grid
+# `clues_dict` is the cleaned dictionary of words to clues
+# Returns: a generated crossword (the updated grid) of size inputted by the user as well as a 
+# dictionary of each word on the board mapped to a triple of its x and y positions, 
+# as well as its horizontal/vertical alignment (True for horizontal, False for vertical)
 
 def generate_puzzle_require_alternation_random_first_word(size, grid, clues_dict):
   # placing first word
@@ -935,7 +950,7 @@ def generate_puzzle_require_alternation_random_first_word(size, grid, clues_dict
 
   next_placement_horizontal = False
 
-  while whitespace > 0 and iterations < 5000: # and other condition that i havent thought of
+  while whitespace > 0 and iterations < 5000: 
     ranked_words = ranked_without_intersections(grid, clues_dict)
     
     if ranked_words == None:
@@ -951,8 +966,7 @@ def generate_puzzle_require_alternation_random_first_word(size, grid, clues_dict
         placement = find_placement_direction_constrained(grid, word, intersection_words, positioned_words, next_placement_horizontal)
         if placement != None:
           # place word on grid
-          whitespace -= determine_whitespace_to_remove(grid, placement[0], 
-          placement[1], word, placement[2])
+          whitespace -= determine_whitespace_to_remove(grid, placement[0], placement[1], word, placement[2])
           grid = place_on_board(grid, word, placement, positioned_words)
           next_placement_horizontal = not next_placement_horizontal
           words_in_puzzle.append(word)
@@ -1012,7 +1026,6 @@ def score_generated_unique_letters(grid):
 
 
 
-
 # Removes a word from positioned words if it has the same x, y and direction as 
 # another word in the grid
 # `positioned_words` is a dictionary of each word on the board mapped to a 
@@ -1045,3 +1058,7 @@ def clean_placed_words(positioned_words):
 
 # pretty_print(TEST_GRID)
 # print(find_placement_direction_constrained(TEST_GRID, 'BED', TEST_INTERSECTION_SET, {'ASEA':(0, 2, True), 'BEAN':(0, 0, False)}, True))
+
+# clues_dict, ranked_letters = clean_words(3)
+# grid, p = generate_puzzle_random_first_word(3, create_grid(3), clues_dict)
+# pretty_print(grid)
