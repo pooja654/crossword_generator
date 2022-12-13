@@ -633,6 +633,37 @@ def place_first_word(size, word, grid):
 
   return grid, x, y
 
+def find_placement_direction_constrained(grid, word, intersection_words, positioned_words, next_word_horizontal):
+  for word_on_board in intersection_words:
+    
+    # get x and y positions for word on the board
+    x_pos = positioned_words[word_on_board][0]
+    y_pos = positioned_words[word_on_board][1]
+
+    # find intersecting letters between word on board and given word
+    word_on_board_set = set(word_on_board)
+    word_set = set(word)
+    intersections = word_on_board_set.union(word_set)
+    # go through word on board and intersecting letters, find the first 
+    # intersecting letter that we can place a word at
+    for i in range(len(word_on_board)):
+      if word_on_board[i] in intersections:
+
+        # find all intersections in the word to be placed
+        word_intersections = []
+        for j in range(len(word)):
+          if word[j] == word_on_board[i]:
+            word_intersections.append(j)
+
+        # check to see if we can intersect a word here
+        is_horizontal = positioned_words[word_on_board][2]
+        if is_horizontal != next_word_horizontal:
+          for j in word_intersections:
+            if (is_valid_intersection(is_horizontal, x_pos, y_pos, i, j, grid, word)):
+              position = determine_position(x_pos, y_pos, i, j, is_horizontal)
+              if check_layering(position, positioned_words, word):
+                return position
+  return None
 
 # CROSSWORD-GENERATING ALGORITHMS
 
@@ -802,6 +833,49 @@ def generate_puzzle_random_first_word(size, grid, clues_dict):
     iterations += 1
   return grid, positioned_words
   
+# ALGORITHM 4
+# THIS MAY HELP OUR VERTICAL PROBLEM
+
+def generate_puzzle_require_alternation(size, grid, clues_dict):
+  # ranking words based off number of intersections with all other words
+  ranked_words = ranked_by_num_intersections(clues_dict.keys(), clues_dict)
+
+  # sort ranked words (in order of descending number of interesections)
+  ranked_words = sorted(ranked_words, key=lambda x: x[0], reverse=True)  
+
+  # placing first word
+  first_word = ranked_words[0][1]
+  grid, x, y = place_first_word(size, first_word, grid)
+  whitespace = size * size - 3*len(first_word)
+  words_in_puzzle = [first_word]
+
+  # structure to store word positions on crossword, with x and y, and whether the 
+  # word is horizontal or vertical
+  positioned_words = {first_word: ((x-len(first_word)), y, True)}
+  iterations = 0
+
+  next_placement_horizontal = False
+
+  while rank < len(ranked_words) and no_word_found:
+      word = ranked_words[rank][1]
+      if word not in positioned_words:
+        intersection_words = contains_intersection(word, words_in_puzzle)
+
+        # find ideal placement of word on grid
+        placement = find_placement_direction_constrained(grid, word, intersection_words, positioned_words, next_placement_horizontal)
+        if placement != None:
+          # place word on grid
+          whitespace -= determine_whitespace_to_remove(grid, placement[0], placement[1], word, placement[2])
+          grid = place_on_board(grid, word, placement, positioned_words)
+          no_word_found = False
+      rank += 1
+      
+      if no_word_found:
+        break
+      iterations += 1
+  
+  return grid, positioned_words
+
 
 # SCORE GENERATION
 
@@ -876,3 +950,11 @@ def clean_placed_words(positioned_words):
       cleaned_words[word1] = positioned_words[word1]
   
   return cleaned_words
+
+# TEST_GRID = [['B', ' ', ' ', ' '], ['E', ' ', ' ', ' '], ['A', 'S', 'E', 'A'], ['N', ' ', ' ', ' ']]
+# TEST_INTERSECTION_SET = set()
+# TEST_INTERSECTION_SET.add('ASEA')
+# TEST_INTERSECTION_SET.add('BEAN')
+
+# pretty_print(TEST_GRID)
+# print(find_placement_direction_constrained(TEST_GRID, 'BED', TEST_INTERSECTION_SET, {'ASEA':(0, 2, True), 'BEAN':(0, 0, False)}, True))

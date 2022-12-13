@@ -253,6 +253,14 @@ def check_puzzle(positioned_words, correct_grid, values, word_numbers, clue_numb
     new_ids = []
     correct = True
 
+    # has the grid been modified by user input
+    modified = []
+    for i in range(len(correct_grid)):
+        row = []
+        for j in range(len(correct_grid)):
+            row.append(False)
+        modified.append(row)
+
     # iterate over each user input
     for i in range(len(values)):
         word_number = clue_number_to_word_number[i] 
@@ -285,6 +293,7 @@ def check_puzzle(positioned_words, correct_grid, values, word_numbers, clue_numb
             # place the letter and append the id of the draw_text to `new_ids`
             letter_loc = (x * BLOCK_SIZE + 18, y * BLOCK_SIZE + 17)
             new_ids.append(crossword.draw_text('{}'.format(input_word[j]), letter_loc, font='Courier 25'))
+            modified[y][x] = True
 
             # if horizontal move right, else move down
             if horizontal:
@@ -295,9 +304,9 @@ def check_puzzle(positioned_words, correct_grid, values, word_numbers, clue_numb
         # if the user input was too short, mark all squares beyond the input red and make them blank
         if len(input_word) < len(answer_word):
             for j in range(len(answer_word) - len(input_word)):
-                if horizontal:
+                if horizontal and not modified[y][x+j]:
                     crossword.draw_rectangle(((x+j) * BLOCK_SIZE + 5, y * BLOCK_SIZE + 3), ((x+j) * BLOCK_SIZE + BLOCK_SIZE + 5, y * BLOCK_SIZE + BLOCK_SIZE + 3), line_color='red', fill_color='white')
-                else:
+                elif not horizontal and not modified[y+j][x]:
                     crossword.draw_rectangle((x * BLOCK_SIZE + 5, (y+j) * BLOCK_SIZE + 3), (x * BLOCK_SIZE + BLOCK_SIZE + 5, (y+j) * BLOCK_SIZE + BLOCK_SIZE + 3), line_color='red', fill_color='white')
 
             # redraw the word number if the grid square being redrawn has a word number
