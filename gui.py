@@ -206,13 +206,14 @@ def generate_crossword(size, numIter, play_layout):
     clues_dict, ranked_letters = generate.clean_words(size)
     grid = generate.create_grid(size)
     positioned_words = {}
+    ranking = generate.ranked_without_intersections
 
     # run each algorithm and select one with the highest score
-    grid1, positioned_words1 = generate.generate_puzzle_highest_ranked_first(size, generate.create_grid(size), clues_dict)
+    grid1, positioned_words1 = generate.generate_puzzle_highest_ranked_first(size, generate.create_grid(size), clues_dict, ranking)
     positioned_words1 = generate.clean_placed_words(positioned_words1)
     grid1_score = generate.score_generated_minimize_whitespace(grid1)
 
-    grid2, positioned_words2 = generate.generate_puzzle_highest_ranked_longest_first(size, generate.create_grid(size), clues_dict)
+    grid2, positioned_words2 = generate.generate_puzzle_highest_ranked_longest_first(size, generate.create_grid(size), clues_dict, ranking)
     positioned_words2 = generate.clean_placed_words(positioned_words2)
     grid2_score = generate.score_generated_minimize_whitespace(grid2)
 
@@ -221,7 +222,7 @@ def generate_crossword(size, numIter, play_layout):
     highest_score = 0
     # create `numIter` random crosswords and select the highest scoring crossword
     for i in range(numIter):
-        random_grid_temp, positioned_words_random_temp = generate.generate_puzzle_random_first_word(size, generate.create_grid(size), clues_dict)
+        random_grid_temp, positioned_words_random_temp = generate.generate_puzzle_random_first_word(size, generate.create_grid(size), clues_dict, ranking)
         positioned_words_random_temp = generate.clean_placed_words(positioned_words_random_temp)
         score = generate.score_generated_minimize_whitespace(random_grid_temp)
         if score > highest_score:
@@ -231,7 +232,7 @@ def generate_crossword(size, numIter, play_layout):
     positioned_words3 = generate.clean_placed_words(positioned_words3)
     grid3_score = generate.score_generated_minimize_whitespace(grid3)
 
-    grid4, positioned_words4 = generate.generate_puzzle_require_alternation(size, generate.create_grid(size), clues_dict)
+    grid4, positioned_words4 = generate.generate_puzzle_require_alternation(size, generate.create_grid(size), clues_dict, ranking)
     positioned_words4 = generate.clean_placed_words(positioned_words4)
     grid4_score = generate.score_generated_minimize_whitespace(grid4)
 
@@ -240,7 +241,7 @@ def generate_crossword(size, numIter, play_layout):
     highest_score = 0
     # create `numIter` random crosswords and select the highest scoring crossword
     for i in range(numIter):
-        random_grid_temp, positioned_words_random_temp = generate.generate_puzzle_require_alternation_random_first_word(size, generate.create_grid(size), clues_dict)
+        random_grid_temp, positioned_words_random_temp = generate.generate_puzzle_require_alternation_random_first_word(size, generate.create_grid(size), clues_dict, ranking)
         positioned_words_random_temp = generate.clean_placed_words(positioned_words_random_temp)
         score = generate.score_generated_minimize_whitespace(random_grid_temp)
         if score > highest_score:
