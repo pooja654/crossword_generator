@@ -1003,8 +1003,8 @@ def score_generated_minimize_whitespace(grid):
 # Returns: the proportion of number of intersections in the grid to the size of the grid
 def score_generated_maximize_intersections(grid):
   num_intersections = 0
-  for y in len(grid):
-    for x in len(grid):
+  for y in range(len(grid)):
+    for x in range(len(grid)):
       if is_intersection(y, x, grid):
         num_intersections += 1
   return num_intersections / (len(grid) * len(grid))
