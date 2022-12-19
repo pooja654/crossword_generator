@@ -6,13 +6,14 @@ import random
 # `size` is the length and width of the crossword which was inputted by the user
 # Returns: the cleaned clues dictionary, dictionary of letters ranked by their 
 # frequency in the dataset
+
+# Note: The user is able to input any dataset here. We worked with both custom_clues.csv (created by us)
+# and clues.csv (downloaded from a website) in this project. custom_clues.csv runs faster because it has fewer rows.
 def clean_words(size):
   clues = pd.read_csv('custom_clues.csv')
   all_words = {}
 
   # clean data and add to dictionary
-  # for i in range(len(clues)):
-
   clues = clues.dropna()
   for index, row in clues.iterrows():
     all_words[row['answer']] = row['clue']
@@ -250,12 +251,12 @@ def ranked_without_intersections_and_unique_letters(grid, clues_dict):
         unique_score += 1
 
     if count != 0:
-      ranked_words.append((count, unique_score, word))
+      ranked_words.append((count, word, unique_score))
 
   if ranked_words == []:
     return None
 
-  ranked_words = sorted(ranked_words, lambda x: (x[0], x[1]), reverse=True)
+  ranked_words = sorted(ranked_words, key=lambda x: (x[0], x[2]), reverse=True)
   return ranked_words
 
 
@@ -267,6 +268,8 @@ def ranked_without_intersections_and_unique_letters(grid, clues_dict):
 def contains_intersection(w, current_words):
   intersecting_words = set()
   for word in current_words:
+    if(type(w) == int):
+      print(w)
     for letter in w:
       if letter in word:
         intersecting_words.add(word)
@@ -701,7 +704,8 @@ def find_placement_direction_constrained(grid, word, intersection_words, positio
 # `size` is the length and width of the crossword which was inputted by the user
 # `grid` is the current crossword grid
 # `clues_dict` is the cleaned dictionary of words to clues
-
+# `ranking` is the ranking function to use
+# `ranked_letters` is a letter to count dictionary to be used with the rank_by_letter_score ranking function
 # Returns: a generated crossword (the updated grid) of size inputted by the user as well as a 
 # dictionary of each word on the board mapped to a triple of its x and y positions, 
 # as well as its horizontal/vertical alignment (True for horizontal, False for vertical)
@@ -725,7 +729,7 @@ def generate_puzzle_highest_ranked_first(size, grid, clues_dict, ranking, ranked
   
   while whitespace > 0 and iterations < 5000: 
     if ranking == ranked_by_letter_score:
-      ranked_words = ranking(grid, clues_dict, ranked_letters)
+      ranked_words = ranking(clues_dict, ranked_letters)
     else:
       ranked_words = ranking(grid, clues_dict)
 
@@ -765,6 +769,8 @@ def generate_puzzle_highest_ranked_first(size, grid, clues_dict, ranking, ranked
 # `size` is the length and width of the crossword which was inputted by the user
 # `grid` is the current crossword grid
 # `clues_dict` is the cleaned dictionary of words to clues
+# `ranking` is the ranking function to use
+# `ranked_letters` is a letter to count dictionary to be used with the rank_by_letter_score ranking function
 # Returns: a generated crossword (the updated grid) of size inputted by the user as well as a 
 # dictionary of each word on the board mapped to a triple of its x and y positions, 
 # as well as its horizontal/vertical alignment (True for horizontal, False for vertical)
@@ -787,7 +793,7 @@ def generate_puzzle_highest_ranked_longest_first(size, grid, clues_dict, ranking
   
   while whitespace > 0 and iterations < 5000:
     if ranking == ranked_by_letter_score:
-      ranked_words = ranking(grid, clues_dict, ranked_letters)
+      ranked_words = ranking(clues_dict, ranked_letters)
     else:
       ranked_words = ranking(grid, clues_dict)
     
@@ -826,6 +832,8 @@ def generate_puzzle_highest_ranked_longest_first(size, grid, clues_dict, ranking
 # `size` is the length and width of the crossword which was inputted by the user
 # `grid` is the current crossword grid
 # `clues_dict` is the cleaned dictionary of words to clues
+# `ranking` is the ranking function to use
+# `ranked_letters` is a letter to count dictionary to be used with the rank_by_letter_score ranking function
 # Returns: a generated crossword (the updated grid) of size inputted by the user as well as a 
 # dictionary of each word on the board mapped to a triple of its x and y positions, 
 # as well as its horizontal/vertical alignment (True for horizontal, False for vertical)
@@ -841,7 +849,7 @@ def generate_puzzle_random_first_word(size, grid, clues_dict, ranking, ranked_le
 
   while whitespace > 0 and iterations < 5000: 
     if ranking == ranked_by_letter_score:
-      ranked_words = ranking(grid, clues_dict, ranked_letters)
+      ranked_words = ranking(clues_dict, ranked_letters)
     else:
       ranked_words = ranking(grid, clues_dict)
     
@@ -881,6 +889,8 @@ def generate_puzzle_random_first_word(size, grid, clues_dict, ranking, ranked_le
 # `size` is the length and width of the crossword which was inputted by the user
 # `grid` is the current crossword grid
 # `clues_dict` is the cleaned dictionary of words to clues
+# `ranking` is the ranking function to use
+# `ranked_letters` is a letter to count dictionary to be used with the rank_by_letter_score ranking function
 # Returns: a generated crossword (the updated grid) of size inputted by the user as well as a 
 # dictionary of each word on the board mapped to a triple of its x and y positions, 
 # as well as its horizontal/vertical alignment (True for horizontal, False for vertical)
@@ -903,7 +913,7 @@ def generate_puzzle_require_alternation(size, grid, clues_dict, ranking, ranked_
 
   while whitespace > 0 and iterations < 5000:
     if ranking == ranked_by_letter_score:
-      ranked_words = ranking(grid, clues_dict, ranked_letters)
+      ranked_words = ranking(clues_dict, ranked_letters)
     else:
       ranked_words = ranking(grid, clues_dict)
     
@@ -944,6 +954,8 @@ def generate_puzzle_require_alternation(size, grid, clues_dict, ranking, ranked_
 # `size` is the length and width of the crossword which was inputted by the user
 # `grid` is the current crossword grid
 # `clues_dict` is the cleaned dictionary of words to clues
+# `ranking` is the ranking function to use
+# `ranked_letters` is a letter to count dictionary to be used with the rank_by_letter_score ranking function
 # Returns: a generated crossword (the updated grid) of size inputted by the user as well as a 
 # dictionary of each word on the board mapped to a triple of its x and y positions, 
 # as well as its horizontal/vertical alignment (True for horizontal, False for vertical)
@@ -964,7 +976,7 @@ def generate_puzzle_require_alternation_random_first_word(size, grid, clues_dict
 
   while whitespace > 0 and iterations < 5000: 
     if ranking == ranked_by_letter_score:
-      ranked_words = ranking(grid, clues_dict, ranked_letters)
+      ranked_words = ranking(clues_dict, ranked_letters)
     else:
       ranked_words = ranking(grid, clues_dict)
     

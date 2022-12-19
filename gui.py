@@ -56,11 +56,10 @@ def make_end_window(time_took, word_numbers, grid, positioned_words):
 # Generate the clues for the selected words on the puzzle
 # `clues_dict` is the cleaned dictionary of words to clues
 # `word_numbers` is a dictionary mapping the number for the word and clue to the word itself
-# `positioned_words` is a dictionary mapping the words that were placed on the board to a tuple (x, y, is_horizontal)
 # which specifies the starting position of the word and the direction it was placed
 # Returns: a dictionary mapping the 'Horizontal' to (word number, clue) and 'Vertical' to (word number, clue) for 
 # each clue
-def generate_clues(clues_dict, word_numbers, positioned_words):
+def generate_clues(clues_dict, word_numbers):
     clues = {'Horizontal' : [], 'Vertical' : []}
     horizontal = word_numbers[0]
     vertical = word_numbers[1]
@@ -78,6 +77,7 @@ def generate_clues(clues_dict, word_numbers, positioned_words):
 # Format the clues in the play screen layout
 # `clues` is a dictionary where 'Horizontal' is mapped to a list of (clue number, clue) for all horizontal clues and
 # 'Vertical' is mapped to a list of (clue number, clue) for all vertical clues
+# `play_layout` is the layout to be used for the play window
 # Returns: a mapping of the clue to a tuple of the the word number and the word's direction
 def format_clues(clues, play_layout):
     horizontal = [[sg.Text('Across')]]
@@ -209,11 +209,11 @@ def generate_crossword(size, numIter, play_layout):
     ranking = generate.ranked_without_intersections
 
     # run each algorithm and select one with the highest score
-    grid1, positioned_words1 = generate.generate_puzzle_highest_ranked_first(size, generate.create_grid(size), clues_dict, ranking)
+    grid1, positioned_words1 = generate.generate_puzzle_highest_ranked_first(size, generate.create_grid(size), clues_dict, ranking, ranked_letters)
     positioned_words1 = generate.clean_placed_words(positioned_words1)
     grid1_score = generate.score_generated_minimize_whitespace(grid1)
 
-    grid2, positioned_words2 = generate.generate_puzzle_highest_ranked_longest_first(size, generate.create_grid(size), clues_dict, ranking)
+    grid2, positioned_words2 = generate.generate_puzzle_highest_ranked_longest_first(size, generate.create_grid(size), clues_dict, ranking, ranked_letters)
     positioned_words2 = generate.clean_placed_words(positioned_words2)
     grid2_score = generate.score_generated_minimize_whitespace(grid2)
 
@@ -222,7 +222,7 @@ def generate_crossword(size, numIter, play_layout):
     highest_score = 0
     # create `numIter` random crosswords and select the highest scoring crossword
     for i in range(numIter):
-        random_grid_temp, positioned_words_random_temp = generate.generate_puzzle_random_first_word(size, generate.create_grid(size), clues_dict, ranking)
+        random_grid_temp, positioned_words_random_temp = generate.generate_puzzle_random_first_word(size, generate.create_grid(size), clues_dict, ranking, ranked_letters)
         positioned_words_random_temp = generate.clean_placed_words(positioned_words_random_temp)
         score = generate.score_generated_minimize_whitespace(random_grid_temp)
         if score > highest_score:
@@ -232,7 +232,7 @@ def generate_crossword(size, numIter, play_layout):
     positioned_words3 = generate.clean_placed_words(positioned_words3)
     grid3_score = generate.score_generated_minimize_whitespace(grid3)
 
-    grid4, positioned_words4 = generate.generate_puzzle_require_alternation(size, generate.create_grid(size), clues_dict, ranking)
+    grid4, positioned_words4 = generate.generate_puzzle_require_alternation(size, generate.create_grid(size), clues_dict, ranking, ranked_letters)
     positioned_words4 = generate.clean_placed_words(positioned_words4)
     grid4_score = generate.score_generated_minimize_whitespace(grid4)
 
@@ -241,7 +241,7 @@ def generate_crossword(size, numIter, play_layout):
     highest_score = 0
     # create `numIter` random crosswords and select the highest scoring crossword
     for i in range(numIter):
-        random_grid_temp, positioned_words_random_temp = generate.generate_puzzle_require_alternation_random_first_word(size, generate.create_grid(size), clues_dict, ranking)
+        random_grid_temp, positioned_words_random_temp = generate.generate_puzzle_require_alternation_random_first_word(size, generate.create_grid(size), clues_dict, ranking, ranked_letters)
         positioned_words_random_temp = generate.clean_placed_words(positioned_words_random_temp)
         score = generate.score_generated_minimize_whitespace(random_grid_temp)
         if score > highest_score:
@@ -268,17 +268,15 @@ def generate_crossword(size, numIter, play_layout):
         grid = grid2
         positioned_words = positioned_words2
 
-    
-
     # assign numbers to each word on the board
     word_numbers = create_word_numbers(size, grid, positioned_words)
 
     # generate and format clues on the play screen 
-    clues = generate_clues(clues_dict, word_numbers, positioned_words)
+    clues = generate_clues(clues_dict, word_numbers)
     clue_number_to_word_number_direction = format_clues(clues, play_layout)
 
     # create a new window for the play screen 
-    play_window = sg.Window("Crossword", play_layout, size=(1000,1000), margins=(50, 50))
+    play_window = sg.Window("Crossword", play_layout, size=(1000,1000), margins=(50, 50), element_justification='c')
     play_window.Finalize()
     crossword = play_window['-CROSSWORD-']
 
@@ -296,7 +294,7 @@ def generate_crossword(size, numIter, play_layout):
 # `correct_grid` is the completed crossword with the words placed
 # `values` are the user's inputs to be checked
 # `word_numbers` is a dictionary mapping the number the word was assigned to the word
-# `clue_number_to_word_number` is a mapping of the clue number which is determined by the play layout and the word number
+# `clue_number_to_word_number_direction` is a mapping of clue number to its word number and direction
 # `play_window` is the window which includes the grid and the clues
 def check_puzzle(positioned_words, correct_grid, values, word_numbers, clue_number_to_word_number_direction, play_window):
     crossword = play_window['-CROSSWORD-']
